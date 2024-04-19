@@ -32,6 +32,8 @@ targets = [
 # https://embarkstudios.github.io/cargo-deny/checks/advisories/cfg.html
 [advisories]
 # The path where the advisory database is cloned/fetched into
+# Please replace with your own path if you are using a windows machine
+# Ex. "/Users/Johny/.cargo/advisory-db"
 db-path = "~/.cargo/advisory-db"
 # The url(s) of the advisory databases to use
 db-urls = ["https://github.com/rustsec/advisory-db"]
