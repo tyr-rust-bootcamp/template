@@ -1,0 +1,19 @@
+{
+  "recommendations": [
+    "serayuzgur.crates",
+    "tamasfe.even-better-toml",
+    "aaron-bond.better-comments",
+    "usernamehw.errorlens",
+    "eamodio.gitlens",
+    "github.copilot",
+    "oderwat.indent-rainbow",
+    "esbenp.prettier-vscode",
+    "humao.rest-client",
+    "rust-lang.rust-analyzer",
+    "hdevalke.rust-test-lens",
+    "swellaby.vscode-rust-test-adapter",
+    "wayou.vscode-todo-highlight",
+    "vscode-icons-team.vscode-icons",
+    "redhat.vscode-yaml",
+  ]
+}
