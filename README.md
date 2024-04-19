@@ -26,6 +26,8 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 - vscode-icons: 图标优化
 - YAML: YAML 文件支持
 
+也可以搜索"geektime rust"找到`rust extension pack for geektime rust bootcamp`一键安装所有需要的插件, marketplace地址: https://marketplace.visualstudio.com/items?itemName=azurepx.rust-extension-pack-for-geektime-rust-bootcamp
+
 ### 安装 cargo generate
 
 cargo generate 是一个用于生成项目模板的工具。它可以使用已有的 github repo 作为模版生成新的项目。
