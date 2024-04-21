@@ -2,135 +2,50 @@
 
 ## 内容
 
-- 密码生成器
+- 测试密码强度
 
 ## 安装依赖
 
 ```bash
-cargo add rand
+cargo add zxcvbn
 ```
 
-## 密码生成器
-
-首先调整一下项目结构，新建 process 目录，将 CSV 处理和密码生成器的代码放到 process 目录下。下面各自实现的方法通过如下方式导出。
+## 测试密码强度
 
 ```rust
-mod csv_convert;
-mod gen_pass;
-
-pub use csv_convert::process_csv;
-pub use gen_pass::process_genpass;
-```
-
-新增 struct GenPassOpts 用于接收用户输入密码生成所需的参数。
-
-```rust
-#[derive(Debug, Parser)]
-pub struct GenPassOpts {
-    #[arg(short, long, default_value_t = 16)]
-    pub length: u8,
-
-    #[arg(long, default_value_t = false)]
-    pub no_uppercase: bool,
-
-    #[arg(long, default_value_t = false)]
-    pub no_lowercase: bool,
-
-    #[arg(long, default_value_t = false)]
-    pub no_number: bool,
-
-    #[arg(long, default_value_t = false)]
-    pub no_symbol: bool,
-}
-
-```
-
-密码生成器的代码如下。
-
-```rust
-use rand::prelude::SliceRandom;
-
-// 定义了四个常量 UPPER、LOWER、NUMBER 和 SYMBOL，分别代表了大写字母、小写字母、数字和符号。
-const UPPER: &[u8] = b"ABCDEFGHJKLMNPQRSTUVWXYZ";
-const LOWER: &[u8] = b"abcdefghijkmnopqrstuvwxyz";
-const NUMBER: &[u8] = b"123456789";
-const SYMBOL: &[u8] = b"!@#$%^&*_";
-
 pub fn process_genpass(length: u8, no_upper: bool, no_lower: bool, no_number: bool, no_symbol: bool) -> anyhow::Result<()> {
-    // 创建了一个随机数生成器 rng。
-    let mut rng = rand::thread_rng();
-    // 创建了两个空的 Vec，分别用来存储密码和字符集。
-    let mut password = Vec::new();
-    // 根据用户的输入来决定是否包含大写字母、小写字母、数字和符号。
-    let mut chars = Vec::new();
-
-    // 默认情况下，包含大写字母、小写字母、数字和符号。用户可以通过 --no-uppercase、--no-lowercase、--no-number 和 --no-symbol 参数来控制是否不包含对应的字符。
-    // 如果用户选择了包含大写字母，我们就将 UPPER 集合中的字符添加到字符集中，并从中随机选择一个字符添加到密码中。
-    // 如果用户选择了包含小写字母、数字和符号，我们也分别将对应的字符集添加到字符集中，并从中随机选择一个字符添加到密码中。(这样可以保证密码中至少包含一个大写字母、一个小写字母、一个数字和一个符号)
-    if !no_upper {
-        chars.extend_from_slice(UPPER);
-        // 使用随机数生成器 rng 从 UPPER 集合中随机选择一个字符。
-        password.push(*UPPER.choose(&mut rng).expect("UPPER won't be empty"));
-    }
-    if !no_lower {
-        chars.extend_from_slice(LOWER);
-        password.push(*LOWER.choose(&mut rng).expect("LOWER won't be empty"));
-    }
-    if !no_number {
-        chars.extend_from_slice(NUMBER);
-        password.push(*NUMBER.choose(&mut rng).expect("NUMBER won't be empty"));
-    }
-    if !no_symbol {
-        chars.extend_from_slice(SYMBOL);
-        password.push(*SYMBOL.choose(&mut rng).expect("SYMBOL won't be empty"));
-    }
-
-    // 根据用户输入的密码长度，从字符集中随机选择字符，添加到密码中，直到密码的长度达到用户输入的长度。
-    for _ in 0..(length - password.len() as u8) {
-        let c = chars.choose(&mut rng).expect("chars won't be empty");
-        password.push(*c);
-    }
-    // 将密码打乱顺序
-    password.shuffle(&mut rng);
-
+    ......
     // 将密码转换为字符串，并打印出来。
-    println!("{}", String::from_utf8(password)?);
+    let password = String::from_utf8(password)?;
+    println!("{}", password);
 
-    Ok(())
-}
-```
+    let estimate = zxcvbn(&password, &[])?;
+    // eprintln! 的输出会被打印到标准错误流中，而不是标准输出流中。
+    // 比如 cargo run -- genpass -l 16 > password.txt 只会将密码保存到 password.txt 文件中，而不会包含密码强度的信息。
+    eprintln!("Password strength: {}", estimate.score());
 
-最后在 main.rs 中接收用户输入的参数，并调用密码生成器。
-
-```rust
-fn main() -> anyhow::Result<()> {
-    let opts: Opts = Opts::parse();
-    match opts.cmd {
-       ......
-        SubCommand::GenPass(opts) => {
-            process_genpass(opts.length, opts.no_uppercase, opts.no_lowercase, opts.no_number, opts.no_symbol)?;
-        }
-    }
     Ok(())
 }
 ```
 
 ## 验证效果
 
-执行以下命令生成 16 位密码。
+执行以下命令生成 16 位密码，可以看到密码强度是 4（强）。
 
 ```bash
 cargo run -- genpass -l 16
  
 # 输出
-%5HGV2NL@$WvA3%R
+9kgqfQR7JGa!DKTK
+Password strength: 4
 ```
 
-生成不带数字和符号的密码。
+生成 6 位不带数字和符号的密码，可以看到密码强度是 1（弱）。
 
 ```bash
-cargo run -- genpass -l 16 --no-number --no-symbol
+cargo run -- genpass -l 6 --no-number --no-symbol
 
 # 输出
-GHxCsnQpEozVDatD
+bbZBje
+Password strength: 1
 ```
