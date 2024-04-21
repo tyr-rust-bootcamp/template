@@ -1,5 +1,5 @@
 [package]
-name = "template"
+name = "rcli"
 version = "0.1.0"
 authors = ["Seven Cheng <chengzw@163.com>"]
 edition = "2021"
