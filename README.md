@@ -1,83 +1,55 @@
-# Geektime Rust 语言训练营
+# 第一周：魔法神箭：从 Hello world 到实用的 CLI 工具
 
-## 环境设置
+## 内容
 
-### 安装 Rust
+- 初始化 CLI 项目，能够读取并打印命令行参数
+- 增加字段校验，例如校验输入文件是否存在
+
+## 安装依赖
+
+Clap 是 Rust 中用于构建 CLI 的 crate。
+我们可以使用 --feature 指定只安装某些 feature 而不是整个 crate。
 
 ```bash
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+cargo add clap --features derive
 ```
 
-### 安装 VSCode 插件
-
-- crates: Rust 包管理
-- Even Better TOML: TOML 文件支持
-- Better Comments: 优化注释显示
-- Error Lens: 错误提示优化
-- GitLens: Git 增强
-- Github Copilot: 代码提示
-- indent-rainbow: 缩进显示优化
-- Prettier - Code formatter: 代码格式化
-- REST client: REST API 调试
-- rust-analyzer: Rust 语言支持
-- Rust Test lens: Rust 测试支持
-- Rust Test Explorer: Rust 测试概览
-- TODO Highlight: TODO 高亮
-- vscode-icons: 图标优化
-- YAML: YAML 文件支持
-
-### 安装 cargo generate
-
-cargo generate 是一个用于生成项目模板的工具。它可以使用已有的 github repo 作为模版生成新的项目。
+## 初始代码
 
 ```bash
-cargo install cargo-generate
+cargo run -- csv -i test.csv
+
+# 输出
+Opts { cmd: Csv(CsvOpts { input: "test.csv", output: "output.json", delimiter: ',', header: true }) }
 ```
 
-在我们的课程中，新的项目会使用 `tyr-rust-bootcamp/template` 模版生成基本的代码：
+## 增加字段校验
 
-```bash
-cargo generate tyr-rust-bootcamp/template
+通过 verify_input_file 函数校验输入文件是否存在。
+
+```rust
+#[derive(Debug, Parser)]
+struct CsvOpts {
+    #[arg(short, long, value_parser = verify_input_file)]
+    input: String, 
+    ......
+}
+
+
+fn verify_input_file(filename: &str) -> Result<String, String> {
+    if std::path::Path::new(filename).exists() {
+        Ok(filename.to_string())
+    } else {
+        Err(format!("File not found: {}", filename))
+    }
+}
 ```
 
-### 安装 pre-commit
-
-pre-commit 是一个代码检查工具，可以在提交代码前进行代码检查。
+由于输入文件不存在，运行时会报错。
 
 ```bash
-pipx install pre-commit
-```
+cargo run -- csv -i test.csv
 
-安装成功后运行 `pre-commit install` 即可。
-
-### 安装 Cargo deny
-
-Cargo deny 是一个 Cargo 插件，可以用于检查依赖的安全性。
-
-```bash
-cargo install --locked cargo-deny
-```
-
-### 安装 typos
-
-typos 是一个拼写检查工具。
-
-```bash
-cargo install typos-cli
-```
-
-### 安装 git cliff
-
-git cliff 是一个生成 changelog 的工具。
-
-```bash
-cargo install git-cliff
-```
-
-### 安装 cargo nextest
-
-cargo nextest 是一个 Rust 增强测试工具。
-
-```bash
-cargo install cargo-nextest --locked
+# 输出
+error: invalid value 'test.csv' for '--input <INPUT>': File not found: test.csv
 ```
