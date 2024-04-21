@@ -1,8 +1,9 @@
 use std::fs;
 use csv::Reader;
 use serde_json::Value;
+use crate::opts::OutputFormat;
 
-pub fn process_csv(input: &str, output: &str) -> anyhow::Result<()> {
+pub fn process_csv(input: &str, output: String, format: OutputFormat) -> anyhow::Result<()> {
     let mut reader = Reader::from_path(input)?;
     let mut ret = Vec::with_capacity(128);
     // headers() 方法会返回 CSV 文件的第一行，即表头
@@ -17,7 +18,11 @@ pub fn process_csv(input: &str, output: &str) -> anyhow::Result<()> {
         ret.push(json_value);
     }
 
-    let json = serde_json::to_string_pretty(&ret)?;
-    fs::write(output, json)?;
+    // 根据 format 参数的值，将 ret 转换为 JSON 或 YAML 格式的字符串
+    let content = match format {
+        OutputFormat::Json => serde_json::to_string_pretty(&ret)?,
+        OutputFormat::Yaml => serde_yaml::to_string(&ret)?,
+    };
+    fs::write(output, content)?;
     Ok(())
 }

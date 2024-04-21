@@ -2,41 +2,123 @@
 
 ## 内容
 
-- 支持通用的 CSV 字段，通过 serde_json 库的 Value 类型支持任意的 JSON 数据。
+- 支持通用的 JSON 和 YAML 数据类型
 
-## 支持通用的 CSV 字段
+## 安装依赖
 
-在之前的实现中，我们定义了一个 Player 结构体，用于将 CSV 文件中的数据映射到 Player 结构体中，然后再将结构体转换为 JSON 数据。
-然而，这样做有一个缺点，就是我们只能将 CSV 文件中的数据转换为 Player 结构体，如果 CSV 文件中的字段不是 Player 结构体中的字段，就无法转换了。
+```bash
+cargo add serde_yaml
+```
 
-因此，我们需要支持通用的 CSV 字段。我们可以使用 serde_json 库中的 Value 类型，它是一个枚举类型，可以表示 JSON 中的任意类型。
+## 支持通用的 JSON 和 YAML 数据类型
+
+以下说明的主要的代码变化。
+
+定义 OutputFormat 枚举类型，支持 json 和 yaml 两种格式。
 
 ```rust
-pub fn process_csv(input: &str, output: &str) -> anyhow::Result<()> {
-    let mut reader = Reader::from_path(input)?;
-    let mut ret = Vec::with_capacity(128);
-    // headers() 方法会返回 CSV 文件的第一行，即表头
-    let headers = reader.headers()?.clone();
-    // 通过 records() 方法迭代 CSV 文件中的每一行
-    for result in reader.records() {
-        let record = result?;
-        // headers.iter() 与 record.iter() 一一对应，将两个迭代器 zip 起来，再通过 collect 方法将其转换为 Value 类型
-        // zip() 方法会返回一个元组，元组的第一个元素是 headers 的元素，第二个元素是 record 的元素
-        // collect::<Value>() 会将元组转换为 Value 类型
-        let json_value = headers.iter().zip(record.iter()).collect::<Value>();
-        ret.push(json_value);
-    }
-
-    let json = serde_json::to_string_pretty(&ret)?;
-    fs::write(output, json)?;
-    Ok(())
+#[derive(Debug, Clone, Copy)]
+pub enum OutputFormat {
+    Json,
+    Yaml,
 }
 ```
 
-这样我们也无需再定义 Player 结构体了，可以将任何字段的 CSV 文件转换为 JSON 文件。
+创建 `parse_format` 函数用于解析 `--format` 参数。
 
-执行命令后，会将 CSV 文件中的数据读取出来，并将数据写入到 JSON 文件（默认是 output.json，可以通过 -o 参数指定）中。
+```rust
+#[derive(Debug, Parser)]
+pub struct CsvOpts {
+    #[arg(long, value_parser = parse_format, default_value = "json")]
+    pub format: OutputFormat,
+    ......
+}
+
+// 处理输入参数：方法一
+// 直接使用一个函数和匹配语句来处理转换，不依赖于 Rust 的 trait 系统。这对于简单的用途来说可能更直接易懂。
+// fn parse_format(format: &str) -> Result<OutputFormat, String> {
+//     match format {
+//         "json" => Ok(OutputFormat::Json),
+//         "yaml" => Ok(OutputFormat::Yaml),
+//         _ => Err(format!("Invalid format: {}", format)),
+//     }
+// }
+
+
+// 处理输入参数：方法二
+// 通过实现 FromStr trait，使得任何字符串都可以使用标准的 .parse() 方法尝试转换为 OutputFormat。
+// 这是 Rust 惯用的方法来处理从字符串到某个类型的转换。
+
+// parse_format 函数接受一个字符串参数，尝试将其解析为 OutputFormat 枚举类型。
+// 如果字符串是 "json" 或 "yaml"，则解析成功并返回对应的枚举值；否则，返回一个错误。
+fn parse_format(format: &str) -> Result<OutputFormat, anyhow::Error> {
+    format.parse()
+}
+
+impl FromStr for OutputFormat {
+    type Err = anyhow::Error;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "json" => Ok(OutputFormat::Json),
+            "yaml" => Ok(OutputFormat::Yaml),
+            _ => Err(anyhow::anyhow!("Invalid format")),
+        }
+    }
+}
+```
+
+以下这两段代码紧密联系，共同支持将 OutputFormat 枚举类型转换成字符串表示。
+
+```rust
+// 将 OutputFormat 枚举类型转换为字符串
+
+// 在 main.rs 中的 format!("output.{}", opts.format) 代码中的 "{}" 会调用 Display 的这个实现。
+// fmt::Display for OutputFormat 是一个 Display trait 的实现，它定义了如何将 OutputFormat 枚举类型格式化为字符串。
+// 这个实现利用了 From<OutputFormat> for &'static str trait 的实现，将枚举值转换为字符串，然后写入到提供的格式化器中。
+impl fmt::Display for OutputFormat {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        // 通过 Into trait 将 self（OutputFormat 枚举的一个实例）转换为其对应的字符串表示（例如 "json" 或 "yaml"），然后写入到格式化输出流 f 中。
+        // 在 Rust 中，当你实现了 From<T> for U trait，Into<U> for T trait 也会自动被实现。
+        // 这是因为 Rust 标准库中 Into trait 的定义包括一个默认的实现，它基于已存在的 From 实现。
+        write!(f, "{}", Into::<&str>::into(*self))
+    }
+}
+
+// From<OutputFormat> for &'static str 是一个 From trait 的实现，它定义了如何将 OutputFormat 枚举类型转换为静态生命周期的字符串引用。
+// 具体来说，Json 转换为 "json"，Yaml 转换为 "yaml"
+impl From<OutputFormat> for &'static str {
+    fn from(format: OutputFormat) -> Self {
+        match format {
+            OutputFormat::Json => "json",
+            OutputFormat::Yaml => "yaml",
+        }
+    }
+}
+```
+
+process_csv 函数根据 format 参数的值，将 ret 转换为 JSON 或 YAML 格式的字符串。
+
+```rust
+pub fn process_csv(input: &str, output: String, format: OutputFormat) -> anyhow::Result<()> {
+    ......
+    // 根据 format 参数的值，将 ret 转换为 JSON 或 YAML 格式的字符串
+    let content = match format {
+        OutputFormat::Json => serde_json::to_string_pretty(&ret)?,
+        OutputFormat::Yaml => serde_yaml::to_string(&ret)?,
+    };
+    ......
+}
+```
+
+执行下面命令，读取 CSV 并生成 json 文件。
 
 ```bash
-cargo run -- csv -i assets/juventus.csv
+cargo run -- csv -i assets/juventus.csv -o test.json
+```
+
+执行下面命令，读取 CSV 并生成 yaml 文件。
+
+
+```bash
+cargo run -- csv -i assets/juventus.csv -o test.yaml --format yaml
 ```
