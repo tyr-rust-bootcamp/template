@@ -1,51 +1,11 @@
 # 第一周：魔法神箭：从 Hello world 到实用的 CLI 工具
 
-## 内容
-
-- 测试密码强度
-
-## 安装依赖
-
-```bash
-cargo add zxcvbn
-```
-
-## 测试密码强度
-
-```rust
-pub fn process_genpass(length: u8, no_upper: bool, no_lower: bool, no_number: bool, no_symbol: bool) -> anyhow::Result<()> {
-    ......
-    // 将密码转换为字符串，并打印出来。
-    let password = String::from_utf8(password)?;
-    println!("{}", password);
-
-    let estimate = zxcvbn(&password, &[])?;
-    // eprintln! 的输出会被打印到标准错误流中，而不是标准输出流中。
-    // 比如 cargo run -- genpass -l 16 > password.txt 只会将密码保存到 password.txt 文件中，而不会包含密码强度的信息。
-    eprintln!("Password strength: {}", estimate.score());
-
-    Ok(())
-}
-```
-
-## 验证效果
-
-执行以下命令生成 16 位密码，可以看到密码强度是 4（强）。
-
-```bash
-cargo run -- genpass -l 16
- 
-# 输出
-9kgqfQR7JGa!DKTK
-Password strength: 4
-```
-
-生成 6 位不带数字和符号的密码，可以看到密码强度是 1（弱）。
-
-```bash
-cargo run -- genpass -l 6 --no-number --no-symbol
-
-# 输出
-bbZBje
-Password strength: 1
-```
+| 课程视频                      | 内容                                                               | commit                                                                                        | 视频时间        |
+|-------------------------------|--------------------------------------------------------------------|------------------------------------------------------------------------------------------------|-----------------|
+| 7.CLI 项目：处理 CSV          | 初始化 CLI，能够读取并打印命令行参数                                  | [c2febd7](https://github.com/cr7258/01-rcli/commit/c2febd75c53aa9eeef7bfdd39e5d4f1678a8f5bf) | 00:00 - 25:40   |
+| 7.CLI 项目：处理 CSV          | 使用 Serde 从 CSV 文件中反序列化数据，并将数据序列化为 JSON 格式     | [a376170](https://github.com/cr7258/01-rcli/commit/a3761704ee7047e5e5d775b2e8f55e0681c01871)  | 25:40 - 44:50   |
+| 7.CLI 项目：处理 CSV          | 拆分 main 文件，重构代码模块                                         | [4919125](https://github.com/cr7258/01-rcli/commit/4919125e697052969e5ce09f75ce006bce004714)  | 44:50 - 59:11   |
+| 8.CLI 项目：生成随机密码      | 支持通用的 CSV 字段                                                | [4f93780](https://github.com/cr7258/01-rcli/commit/4f93780b7dd31c8ecffaf3b71a0aa3b59e829133)  | 00:00 - 13:00   |
+| 8.CLI 项目：生成随机密码      | 支持通用的 JSON 和 YAML 数据类型                                    | [a936e3e](https://github.com/cr7258/01-rcli/commit/a936e3ee60e6e9a7596a597bda389043772baf58)  | 13:00 - 37:45   |
+| 8.CLI 项目：生成随机密码      | 密码生成器                                                         | [109abbe](https://github.com/cr7258/01-rcli/commit/109abbe8702a644333d88211e9a4ba687c603f28)  | 37:45 - 01:07:40|
+| 8.CLI 项目：生成随机密码      | 测试密码强度                                                       | [4fbbbe2](https://github.com/cr7258/01-rcli/commit/4fbbbe2794456780625b2638cc63769a0ced308e)  | 01:07:40 - 01:16:37|
