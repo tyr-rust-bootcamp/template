@@ -13,6 +13,8 @@ pub struct Opts {
 pub enum SubCommand {
     #[command(name = "csv", about = "Show CSV, or convert CSV to other formats")]
     Csv(CsvOpts),
+    #[command(name = "genpass", about = "Generate a random password")]
+    GenPass(GenPassOpts),
 }
 
 // OutputFormat 是一个枚举类型，有两个可能的值：Json 和 Yaml，分别表示两种不同的输出格式
@@ -38,6 +40,24 @@ pub struct CsvOpts {
 
     #[arg(long, default_value_t = true)]
     pub header: bool,
+}
+
+#[derive(Debug, Parser)]
+pub struct GenPassOpts {
+    #[arg(short, long, default_value_t = 16)]
+    pub length: u8,
+
+    #[arg(long, default_value_t = false)]
+    pub no_uppercase: bool,
+
+    #[arg(long, default_value_t = false)]
+    pub no_lowercase: bool,
+
+    #[arg(long, default_value_t = false)]
+    pub no_number: bool,
+
+    #[arg(long, default_value_t = false)]
+    pub no_symbol: bool,
 }
 
 fn verify_input_file(filename: &str) -> Result<String, String> {
