@@ -1,4 +1,4 @@
 [default.extend-words]
 
 [files]
-extend-exclude = ["CHANGELOG.md", "notebooks/*"]
+extend-exclude = ["CHANGELOG.md", "notebooks/*", "hello.txt", "fixtures/*]
