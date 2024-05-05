@@ -41,6 +41,43 @@ jobs:
         run: cargo clippy --all-targets --all-features --tests --benches -- -D warnings
       - name: Execute rust tests
         run: cargo nextest run --all-features
+      - name: Install cargo-tarpaulin
+        run: cargo install cargo-tarpaulin
+
+      - name: Run cargo-tarpaulin
+        id: tarpaulin
+        run: cargo tarpaulin --out Xml Html --output-dir ./target/ --timeout 120 --ignore-tests --exclude-files "src/main.rs"
+      - name: Install bc
+        run: sudo apt-get install bc
+      - name: Check Code Coverage
+        run: |
+          FILE_PATH="./target/cobertura.xml"
+
+          if [[ -z "$FILE_PATH" || ! -f "$FILE_PATH" ]]; then
+            echo "Usage: $0 path/to/cobertura.xml"
+            echo "Error: File does not exist or no file path provided."
+            exit 1
+          fi
+
+          COVERAGE=$(grep 'line-rate' "$FILE_PATH" | grep -o 'line-rate="[^"]*"' | cut -d'"' -f2 | head -n 1)
+          echo "Code coverage: $COVERAGE"
+
+          if (( $(echo "$COVERAGE < 0.80" | bc -l) )); then
+            echo "Coverage is below 80%, failing the check."
+            exit 1
+          fi
+      - name: Upload coverage report to repository
+        run: |
+          git config --global user.name 'Coverage Bot'
+          git config --global user.email 'coverage@bot.com'
+          git fetch
+          git checkout -b coverage-reports
+          mkdir -p coverage_reports
+          cp ./target/cobertura.xml coverage_reports/$(date +%Y-%m-%d)-report.xml
+          cp ./target/tarpaulin-report.html coverage_reports/$(date +%Y-%m-%d)-report.html
+          git add coverage_reports/*
+          git commit -m "Update coverage report"
+          git push origin coverage-reports
       - name: Generate a changelog
         uses: orhun/git-cliff-action@v2
         id: git-cliff
