@@ -76,6 +76,10 @@ cargo install git-cliff
 
 ### 安装 cargo nextest
 
+
+### 安装 cargo tarpaulin
+
+tarpaulin is a code coverage reporting tool
 cargo nextest 是一个 Rust 增强测试工具。
 
 ```bash
