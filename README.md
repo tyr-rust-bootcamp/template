@@ -1,4 +1,4 @@
-# Geektime Rust 语言训练营
+# Rust Project Template
 
 ## 环境设置
 
