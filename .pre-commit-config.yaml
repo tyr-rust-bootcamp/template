@@ -24,6 +24,13 @@ repos:
         language: rust
         files: \.rs$
         args: []
+      - id: cargo-deny-fetch
+        name: cargo deny fetch
+        description: deny fetch
+        entry: bash -c 'cargo deny fetch'
+        language: rust
+        files: \.rs$
+        args: []
       - id: cargo-deny
         name: cargo deny check
         description: Check cargo dependencies
