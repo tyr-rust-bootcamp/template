@@ -6,3 +6,16 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+
+
+
+
+# 统一代码规范与 Clippy 约束
+[lints.rust]
+unsafe_code = "forbid"         # 默认禁止 unsafe
+missing_debug_implementations = "warn"
+
+[lints.clippy]
+enum_glob_use = "deny"
+unwrap_used = "warn"           # 提示不要随手 unwrap，改用 ? 或 expect
+pedantic = { level = "warn", priority = -1 }
