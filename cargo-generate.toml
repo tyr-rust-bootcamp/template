@@ -1,0 +1,4 @@
+[template]
+# `cliff.toml` is a Tera template consumed by git-cliff, not by cargo-generate.
+# Skip it entirely so its `{{ }}` / `{% %}` syntax isn't mistaken for project variables.
+exclude = ["cliff.toml"]
